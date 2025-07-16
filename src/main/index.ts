@@ -3,23 +3,34 @@ import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { join } from 'path'
 import icon from '../../resources/icon.png?asset'
 
+let mainWindow: BrowserWindow | null = null
+
 function createWindow(): void {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
+    center: true,
+    title: 'Pure-Note',
+    frame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: true,
+      sandbox: true, // Changed to false to allow preload scripts
       contextIsolation: true
     }
   })
+  if (process.platform === 'win32') {
+    mainWindow.setBackgroundMaterial('acrylic') // Available in Electron 26+
+  }
 
   mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+    mainWindow?.show()
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -52,6 +63,23 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+
+  // Window control handlers
+  ipcMain.on('close-window', () => {
+    mainWindow?.close()
+  })
+
+  ipcMain.on('minimize-window', () => {
+    mainWindow?.minimize()
+  })
+
+  ipcMain.on('maximize-window', () => {
+    if (mainWindow?.isMaximized()) {
+      mainWindow.unmaximize()
+    } else {
+      mainWindow?.maximize()
+    }
+  })
 
   createWindow()
 
