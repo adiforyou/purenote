@@ -19,6 +19,9 @@ if (process.contextIsolated) {
         }
       }
     })
+    contextBridge.exposeInMainWorld('context', {
+      locale: navigator.language
+    })
   } catch (error) {
     console.error(error)
   }
